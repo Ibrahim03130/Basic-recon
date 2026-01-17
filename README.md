@@ -1,2 +1,6 @@
-# Basic-recon
-A basic reconnaissance tool
+# Tool
+Basic reconnaissance tool
+#itsolera
+Internship
+#Name
+Ibrahim Shaikh
