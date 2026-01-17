@@ -1,6 +1,6 @@
 # Tool
 Basic reconnaissance tool
-#itsolera
+# itsolera
 Internship
-#Name
+# Name
 Ibrahim Shaikh
