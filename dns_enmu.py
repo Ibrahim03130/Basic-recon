@@ -1,4 +1,5 @@
 import dns.resolver
+import dns.reversename
 import argparse
 from datetime import datetime
 
@@ -19,6 +20,7 @@ def enumerate_dns(domain):
     resolver.lifetime = 6
 
     record_types = ['A', 'AAAA', 'MX', 'NS', 'SOA', 'CNAME', 'TXT']
+    ip_addresses = []  # store IPs for reverse lookup
 
     for record in record_types:
         header = f"\n[+] {record} Records:"
@@ -32,6 +34,10 @@ def enumerate_dns(domain):
                 print(result)
                 output.append(result)
 
+                # Save IPs for reverse lookup
+                if record in ['A', 'AAAA']:
+                    ip_addresses.append(answer.to_text())
+
         except dns.resolver.NoAnswer:
             msg = f"    [!] No {record} record found."
             print(msg)
@@ -41,7 +47,7 @@ def enumerate_dns(domain):
             msg = f"    [!] Domain '{domain}' does not exist."
             print(msg)
             output.append(msg)
-            break
+            return output
 
         except dns.resolver.Timeout:
             msg = "    [!] Request timed out."
@@ -52,6 +58,31 @@ def enumerate_dns(domain):
             msg = f"    [!] Error: {e}"
             print(msg)
             output.append(msg)
+
+    # Reverse DNS Lookup (PTR)
+    if ip_addresses:
+        header = "\n[+] Reverse DNS Lookup (PTR Records):"
+        print(header)
+        output.append(header)
+
+        for ip in ip_addresses:
+            try:
+                reverse_name = dns.reversename.from_address(ip)
+                answers = resolver.resolve(reverse_name, "PTR")
+                for answer in answers:
+                    result = f"    {ip} -> {answer.to_text()}"
+                    print(result)
+                    output.append(result)
+
+            except dns.resolver.NoAnswer:
+                msg = f"    [!] No PTR record found for {ip}"
+                print(msg)
+                output.append(msg)
+
+            except Exception as e:
+                msg = f"    [!] Reverse lookup error for {ip}: {e}"
+                print(msg)
+                output.append(msg)
 
     return output
 
@@ -73,7 +104,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Domain selection
     if args.domain:
         target_domain = args.domain
     else:
@@ -81,7 +111,6 @@ if __name__ == "__main__":
 
     results = enumerate_dns(target_domain)
 
-    # Output selection
     if args.output:
         with open(args.output, "w") as f:
             for line in results:
@@ -89,4 +118,3 @@ if __name__ == "__main__":
         print(f"\n[+] Results saved to {args.output}")
     else:
         save_results(results)
-
